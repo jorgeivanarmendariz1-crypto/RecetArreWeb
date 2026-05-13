@@ -1,0 +1,11 @@
+{
+  "buildCommand": "dotnet publish RecetArreWeb/RecetArreWeb.csproj -c Release -o dist",
+  "outputDirectory": "dist/wwwroot",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
