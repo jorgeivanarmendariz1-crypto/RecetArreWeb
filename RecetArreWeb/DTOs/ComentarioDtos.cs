@@ -27,4 +27,11 @@ namespace RecetArreWeb.DTOs
         [StringLength(1000, MinimumLength = 1, ErrorMessage = "El comentario debe tener entre 1 y 1000 caracteres")]
         public string Contenido { get; set; } = default!;
     }
+
+    public class ComentarioActualizacionDto
+    {
+        public int Id { get; set; }
+        public string Contenido { get; set; } = string.Empty;
+        public int RecetaId { get; set; }
+    }
 }

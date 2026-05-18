@@ -21,6 +21,11 @@ namespace RecetArreWeb.Services
             this.httpClient = httpClient;
         }
 
+        /*
+            public → el método puede usarse desde otras clases.
+            async → indica que el método puede usar await dentro.
+            Task → significa que el método no regresa un valor, pero sí representa una operación que tarda un tiempo en completarse.
+         */
         public async Task<List<ComentarioDto>> ObtenerPorReceta(int recetaId)
         {
             try
@@ -83,6 +88,18 @@ namespace RecetArreWeb.Services
                 Console.WriteLine($"Error al eliminar comentario {id}: {ex.Message}");
                 return false;
             }
+        }
+
+        public async Task<ComentarioDto?> Actualizar(ComentarioActualizacionDto dto)
+        {
+            var response = await httpClient.PutAsJsonAsync($"api/comentarios/{dto.Id}", dto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<ComentarioDto>();
+            }
+
+            return null;
         }
     }
 }
