@@ -39,4 +39,7 @@ builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
 
+// Registrar servicio de ratings
+builder.Services.AddScoped<IRatingService, RatingService>();
+
 await builder.Build().RunAsync();

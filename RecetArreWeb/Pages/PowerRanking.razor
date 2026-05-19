@@ -1,0 +1,171 @@
+﻿@page "/powerranking"
+@inject IRatingService ratingService
+@inject NavigationManager navigation
+
+<PageTitle>Power Ranking Semanal</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-3 mb-1">
+                <div class="d-flex align-items-center justify-content-center rounded-circle bg-warning text-white"
+                     style="width:50px; height:50px; font-size:1.5rem;">
+                    🏆
+                </div>
+                <div>
+                    <h1 class="h3 text-brand mb-0">Power Ranking Semanal</h1>
+                    <p class="text-muted mb-0 small">Top 10 recetas con mejor rating · Se reinicia cada lunes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-brand" role="status"></div>
+            <p class="text-muted mt-3">Cargando ranking...</p>
+        </div>
+    }
+    else if (ranking == null || !ranking.Any())
+    {
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-6">
+                <div class="card border-0 shadow-sm text-center py-5">
+                    <div class="card-body">
+                        <div class="display-4 mb-3">⭐</div>
+                        <h4 class="text-brand mb-2">Aún no hay votos esta semana</h4>
+                        <p class="text-muted mb-4">¡Sé el primero en votar una receta!</p>
+                        <button class="btn btn-brand" @onclick='() => navigation.NavigateTo("/recetas")'>
+                            Ver Recetas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        @if (ranking.Count >= 3)
+        {
+            <div class="row justify-content-center mb-4 g-3">
+                <div class="col-12 col-sm-4 col-md-3 d-flex align-items-end">
+                    <div class="card border-0 shadow-sm w-100 text-center" style="border-top: 4px solid #adb5bd !important;">
+                        <div class="card-body">
+                            <div class="display-6 mb-1">🥈</div>
+                            <div class="fw-bold text-truncate">@ranking[1].Titulo</div>
+                            <div class="text-warning fw-bold fs-5">@EstrellasSolidas(ranking[1].Promedio)</div>
+                            <div class="text-muted small">@ranking[1].Promedio.ToString("0.0") · @ranking[1].TotalVotos votos</div>
+                            <button class="btn btn-sm btn-outline-secondary mt-2"
+                                    @onclick='() => navigation.NavigateTo($"/recetas/{ranking[1].RecetaId}")'>
+                                Ver
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4 col-md-3 d-flex align-items-end">
+                    <div class="card border-0 shadow w-100 text-center" style="border-top: 4px solid #f5a623 !important;">
+                        <div class="card-body">
+                            <div style="font-size:2.5rem;" class="mb-1">🥇</div>
+                            <div class="fw-bold fs-5 text-brand text-truncate">@ranking[0].Titulo</div>
+                            <div class="text-warning fw-bold fs-4">@EstrellasSolidas(ranking[0].Promedio)</div>
+                            <div class="text-muted small">@ranking[0].Promedio.ToString("0.0") · @ranking[0].TotalVotos votos</div>
+                            <button class="btn btn-sm btn-brand mt-2"
+                                    @onclick='() => navigation.NavigateTo($"/recetas/{ranking[0].RecetaId}")'>
+                                Ver
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4 col-md-3 d-flex align-items-end">
+                    <div class="card border-0 shadow-sm w-100 text-center" style="border-top: 4px solid #cd7f32 !important;">
+                        <div class="card-body">
+                            <div class="display-6 mb-1">🥉</div>
+                            <div class="fw-bold text-truncate">@ranking[2].Titulo</div>
+                            <div class="text-warning fw-bold fs-5">@EstrellasSolidas(ranking[2].Promedio)</div>
+                            <div class="text-muted small">@ranking[2].Promedio.ToString("0.0") · @ranking[2].TotalVotos votos</div>
+                            <button class="btn btn-sm btn-outline-secondary mt-2"
+                                    @onclick='() => navigation.NavigateTo($"/recetas/{ranking[2].RecetaId}")'>
+                                Ver
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (ranking.Count > 3)
+        {
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Resto del Ranking</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center" style="width:60px;">#</th>
+                                            <th>Receta</th>
+                                            <th class="text-center">Rating</th>
+                                            <th class="text-center">Votos</th>
+                                            <th class="text-end"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in ranking.Skip(3))
+                                        {
+                                            <tr>
+                                                <td class="text-center fw-bold text-muted">@item.Posicion</td>
+                                                <td>
+                                                    <div class="fw-semibold">@item.Titulo</div>
+                                                    @if (!string.IsNullOrEmpty(item.Descripcion))
+                                                    {
+                                                        <div class="text-muted small">
+                                                            @(item.Descripcion.Length > 80 ? item.Descripcion[..80] + "..." : item.Descripcion)
+                                                        </div>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="text-warning">@EstrellasSolidas(item.Promedio)</span>
+                                                    <div class="text-muted small">@item.Promedio.ToString("0.0")</div>
+                                                </td>
+                                                <td class="text-center text-muted">@item.TotalVotos</td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                            @onclick='() => navigation.NavigateTo($"/recetas/{item.RecetaId}")'>
+                                                        Ver
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<PowerRankingItemDto>? ranking;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ranking = await ratingService.ObtenerPowerRanking();
+        cargando = false;
+    }
+
+    private string EstrellasSolidas(double promedio)
+    {
+        var llenas = (int)Math.Round(promedio);
+        var vacias = 5 - llenas;
+        return new string('★', llenas) + new string('☆', vacias);
+    }
+}

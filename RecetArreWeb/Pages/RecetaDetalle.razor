@@ -5,6 +5,7 @@
 @inject IComentarioService comentarioService
 @inject ICategoriaService categoriaService
 @inject IIngredienteService ingredienteService
+@inject IRatingService ratingService
 @inject NavigationManager navigation
 @inject IJSRuntime JSRuntime
 
@@ -90,6 +91,60 @@
                             <p class="text-muted">@receta.Descripcion</p>
                         }
 
+                        <!-- Widget de Rating semanal -->
+                        <div class="border rounded-3 p-3 mb-3 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <span class="fw-semibold me-2">Rating semanal:</span>
+                                    @if (ratingResumen != null && ratingResumen.TotalVotos > 0)
+                                    {
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <span style="font-size:1.4rem; color: @(i <= ratingResumen.Promedio ? "#f5a623" : "#ccc");">★</span>
+                                        }
+                                        <span class="ms-2 text-muted small">
+                                            @ratingResumen.Promedio.ToString("0.0") / 5
+                                            (@ratingResumen.TotalVotos voto@(ratingResumen.TotalVotos == 1 ? "" : "s"))
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Sin votos esta semana</span>
+                                    }
+                                </div>
+
+                                <AuthorizeView>
+                                    <Authorized>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <span class="text-muted small me-1">Tu voto:</span>
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                var estrella = i;
+                                                var estaSeleccionada = ratingResumen?.VotoUsuarioActual >= estrella;
+                                                var estaHovered = estrellaHover >= estrella;
+                                                <button class="btn btn-link p-0"
+                                                        style="font-size:1.6rem; color: @((estrellaHover > 0 ? estaHovered : estaSeleccionada) ? "#f5a623" : "#ccc"); line-height:1;"
+                                                        @onclick="() => Votar(estrella)"
+                                                        @onmouseenter="() => estrellaHover = estrella"
+                                                        @onmouseleave="() => estrellaHover = 0"
+                                                        title="@estrella estrella@(estrella == 1 ? "" : "s")"
+                                                        disabled="@votando">
+                                                    ★
+                                                </button>
+                                            }
+                                            @if (votando)
+                                            {
+                                                <span class="spinner-border spinner-border-sm text-brand ms-2"></span>
+                                            }
+                                        </div>
+                                    </Authorized>
+                                    <NotAuthorized>
+                                        <a href="/login" class="text-muted small">Inicia sesión para votar</a>
+                                    </NotAuthorized>
+                                </AuthorizeView>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-4 text-muted small">
                             <span><span class="bi bi-clock me-1"></span>Prep: @receta.TiempoPreparacionMinutos min</span>
                             <span><span class="bi bi-fire me-1"></span>Cocción: @receta.TiempoCoccionMinutos min</span>
@@ -123,7 +178,6 @@
                                     <small class="text-muted">Comparte tu opinión sobre esta receta</small>
                                 </div>
                             </div>
-
                             <span class="badge rounded-pill bg-brand px-3 py-2">
                                 @(comentarios?.Count ?? 0) comentario(s)
                             </span>
@@ -131,7 +185,6 @@
                     </div>
 
                     <div class="card-body p-4">
-
                         <AuthorizeView>
                             <Authorized>
                                 <div class="comment-composer mb-4 p-3 rounded-4 border bg-light-subtle">
@@ -140,7 +193,6 @@
                                              style="width: 42px; height: 42px; font-size: 0.95rem; font-weight: 700;">
                                             @(string.IsNullOrWhiteSpace(usuarioActualId) ? "U" : usuarioActualId[0].ToString().ToUpper())
                                         </div>
-
                                         <div class="flex-grow-1">
                                             <textarea class="form-control border-0 bg-white rounded-4 px-3 py-3 mb-2"
                                                       rows="3"
@@ -150,10 +202,8 @@
                                                       @bind:event="oninput"
                                                       @onkeydown="HandleKeyDown"
                                                       style="resize: none; box-shadow: none;"></textarea>
-
                                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                                 <span class="text-muted small">@(nuevoComentario?.Length ?? 0) / 500</span>
-
                                                 <button class="btn btn-brand btn-sm rounded-pill px-4"
                                                         @onclick="CrearComentario"
                                                         disabled="@(string.IsNullOrWhiteSpace(nuevoComentario) || enviandoComentario)">
@@ -173,17 +223,12 @@
                                     </div>
                                 </div>
                             </Authorized>
-
                             <NotAuthorized>
                                 <div class="text-center py-4 px-3 mb-4 rounded-4 border bg-light">
-                                    <div class="mb-2">
-                                        <span class="bi bi-lock fs-3 text-muted"></span>
-                                    </div>
+                                    <div class="mb-2"><span class="bi bi-lock fs-3 text-muted"></span></div>
                                     <p class="mb-1 fw-semibold">Inicia sesión para participar</p>
                                     <p class="text-muted small mb-2">Solo los usuarios autenticados pueden comentar esta receta.</p>
-                                    <a href="/login" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                                        Ir al login
-                                    </a>
+                                    <a href="/login" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Ir al login</a>
                                 </div>
                             </NotAuthorized>
                         </AuthorizeView>
@@ -212,7 +257,6 @@
                                 @foreach (var comentario in comentarios.OrderByDescending(c => c.CreadoUtc))
                                 {
                                     var esMio = EsComentarioDelUsuarioActual(comentario);
-
                                     <div class="border rounded-4 p-3 p-md-4 bg-white shadow-sm">
                                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                             <div class="d-flex align-items-start gap-3">
@@ -220,66 +264,51 @@
                                                      style="width: 46px; height: 46px; font-size: 1rem; font-weight: 700;">
                                                     @comentario.UsuarioId[0].ToString().ToUpper()
                                                 </div>
-
                                                 <div>
                                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                                         <span class="fw-bold text-dark">
                                                             Usuario @(comentario.UsuarioId.Length >= 6 ? comentario.UsuarioId[..6] : comentario.UsuarioId)
                                                         </span>
-
                                                         @if (esMio)
                                                         {
                                                             <span class="badge rounded-pill text-bg-light border">Tu comentario</span>
                                                         }
                                                     </div>
-
                                                     <div class="text-muted small mt-1">
                                                         <span class="bi bi-clock me-1"></span>
                                                         @comentario.CreadoUtc.ToString("dd/MM/yyyy HH:mm")
                                                     </div>
                                                 </div>
                                             </div>
-
                                             @if (esMio && comentarioEditandoId != comentario.Id)
                                             {
                                                 <div class="d-flex align-items-center gap-2">
                                                     <button class="btn btn-outline-primary btn-sm rounded-pill px-3"
-                                                            title="Editar"
                                                             @onclick="() => IniciarEdicion(comentario)">
-                                                        <span class="bi bi-pencil-square me-1"></span>
-                                                        Editar
+                                                        <span class="bi bi-pencil-square me-1"></span>Editar
                                                     </button>
-
                                                     <button class="btn btn-outline-danger btn-sm rounded-pill px-3"
-                                                            title="Eliminar"
                                                             @onclick="() => EliminarComentario(comentario.Id)">
-                                                        <span class="bi bi-trash3 me-1"></span>
-                                                        Eliminar
+                                                        <span class="bi bi-trash3 me-1"></span>Eliminar
                                                     </button>
                                                 </div>
                                             }
                                         </div>
-
                                         @if (comentarioEditandoId == comentario.Id)
                                         {
                                             <div class="mt-3">
                                                 <textarea class="form-control rounded-4 mb-3"
-                                                          rows="3"
-                                                          maxlength="500"
-                                                          @bind="textoEdicion"
-                                                          @bind:event="oninput"
+                                                          rows="3" maxlength="500"
+                                                          @bind="textoEdicion" @bind:event="oninput"
                                                           style="resize: none;"></textarea>
-
                                                 <div class="d-flex justify-content-end gap-2 flex-wrap">
                                                     <button class="btn btn-outline-secondary btn-sm rounded-pill px-3"
                                                             @onclick="CancelarEdicion">
                                                         Cancelar
                                                     </button>
-
                                                     <button class="btn btn-brand btn-sm rounded-pill px-3"
                                                             @onclick="() => GuardarEdicion(comentario.Id)">
-                                                        <span class="bi bi-check2-circle me-1"></span>
-                                                        Guardar cambios
+                                                        <span class="bi bi-check2-circle me-1"></span>Guardar cambios
                                                     </button>
                                                 </div>
                                             </div>
@@ -296,7 +325,6 @@
                                 }
                             </div>
                         }
-
                     </div>
                 </div>
             </div>
@@ -397,28 +425,13 @@
     private bool guardandoEdicion = false;
     private string? usuarioActualId;
 
+    // Variables del rating
+    private RatingResumenDto? ratingResumen;
+    private int estrellaHover = 0;
+    private bool votando = false;
+
     private void VolverARecetas() => navigation.NavigateTo("/recetas");
     private void IrAEditar() => navigation.NavigateTo($"/recetas/editar/{Id}");
-
-    /*protected override async Task OnInitializedAsync()
-    {
-        var tareaReceta = recetaService.ObtenerPorId(Id);
-        var tareaComentarios = comentarioService.ObtenerPorReceta(Id);
-        var tareaCategorias = categoriaService.ObtenerTodas();
-        var tareaIngredientes = ingredienteService.ObtenerTodos();
-
-        await Task.WhenAll(tareaReceta, tareaComentarios, tareaCategorias, tareaIngredientes);
-
-        receta = tareaReceta.Result;
-        comentarios = tareaComentarios.Result;
-        categorias = tareaCategorias.Result;
-        ingredientes = tareaIngredientes.Result;
-
-        if (receta == null)
-        {
-            navigation.NavigateTo("/recetas");
-        }
-    }*/
 
     protected override async Task OnInitializedAsync()
     {
@@ -442,31 +455,36 @@
         if (receta == null)
         {
             navigation.NavigateTo("/recetas");
+            return;
         }
+
+        // Cargamos el resumen de rating de esta semana
+        ratingResumen = await ratingService.ObtenerResumenReceta(Id);
+    }
+
+    private async Task Votar(int estrellas)
+    {
+        votando = true;
+        var resultado = await ratingService.Votar(new RatingCreacionDto { RecetaId = Id, Estrellas = estrellas });
+        if (resultado != null)
+            ratingResumen = await ratingService.ObtenerResumenReceta(Id);
+        else
+            mensajeError = "No se pudo registrar tu voto.";
+        votando = false;
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !e.ShiftKey && !string.IsNullOrWhiteSpace(nuevoComentario))
-        {
             await CrearComentario();
-        }
     }
 
     private async Task CrearComentario()
     {
         if (string.IsNullOrWhiteSpace(nuevoComentario)) return;
-
         enviandoComentario = true;
-
-        var dto = new ComentarioCreacionDto
-        {
-            Contenido = nuevoComentario.Trim(),
-            RecetaId = Id
-        };
-
+        var dto = new ComentarioCreacionDto { Contenido = nuevoComentario.Trim(), RecetaId = Id };
         var resultado = await comentarioService.Crear(dto);
-
         if (resultado != null)
         {
             nuevoComentario = "";
@@ -479,42 +497,27 @@
         {
             mensajeError = "No se pudo agregar el comentario.";
         }
-
         enviandoComentario = false;
     }
 
     private async Task EliminarComentario(int comentarioId)
     {
-        if (!await JSRuntime.InvokeAsync<bool>("confirm", "¿Eliminar este comentario?"))
-            return;
-
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "¿Eliminar este comentario?")) return;
         var resultado = await comentarioService.Eliminar(comentarioId);
-
         if (resultado)
-        {
             comentarios = await comentarioService.ObtenerPorReceta(Id);
-        }
         else
-        {
             mensajeError = "No se pudo eliminar el comentario.";
-        }
     }
 
     private async Task EliminarReceta()
     {
-        if (!await JSRuntime.InvokeAsync<bool>("confirm", "¿Estás seguro de eliminar esta receta? Esta acción no se puede deshacer."))
-            return;
-
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "¿Estás seguro de eliminar esta receta? Esta acción no se puede deshacer.")) return;
         var resultado = await recetaService.Eliminar(Id);
-
         if (resultado)
-        {
             navigation.NavigateTo("/recetas");
-        }
         else
-        {
             mensajeError = "No se pudo eliminar la receta.";
-        }
     }
 
     private void IniciarEdicion(ComentarioDto comentario)
@@ -533,21 +536,12 @@
 
     private async Task GuardarEdicion(int comentarioId)
     {
-        if (string.IsNullOrWhiteSpace(textoEdicion))
-            return;
-
+        if (string.IsNullOrWhiteSpace(textoEdicion)) return;
         guardandoEdicion = true;
         mensajeError = string.Empty;
         mensajeExito = string.Empty;
-
-        var dto = new ComentarioModificacionDto
-        {
-            Contenido = textoEdicion.Trim(),
-            
-        };
-
+        var dto = new ComentarioModificacionDto { Contenido = textoEdicion.Trim() };
         var resultado = await comentarioService.Actualizar(comentarioId, dto);
-
         if (resultado)
         {
             comentarios = await comentarioService.ObtenerPorReceta(Id);
@@ -561,7 +555,6 @@
         {
             mensajeError = "No se pudo actualizar el comentario.";
         }
-
         guardandoEdicion = false;
     }
 
@@ -569,7 +562,6 @@
     {
         if (string.IsNullOrWhiteSpace(usuarioActualId) || string.IsNullOrWhiteSpace(comentario.UsuarioId))
             return false;
-
         return usuarioActualId == comentario.UsuarioId;
     }
 }
